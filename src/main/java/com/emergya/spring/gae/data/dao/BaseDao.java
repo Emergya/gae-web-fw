@@ -10,7 +10,6 @@ import com.google.appengine.api.search.SearchServiceFactory;
 import com.emergya.spring.gae.data.model.BaseEntity;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import com.googlecode.objectify.Work;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Base class implementing generic CRUD methods for instances of classes extending BaseEntity using Objectify.
+ * Base class implementing generic CRUD methods for instances of classes
+ * extending BaseEntity using Objectify.
  *
  * @author lroman
  * @param <E> The entity class

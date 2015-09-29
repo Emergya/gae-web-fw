@@ -24,7 +24,7 @@
         <dependency>
             <groupId>com.googlecode.objectify</groupId>
             <artifactId>objectify</artifactId>
-            <version>5.0.2</version>
+            <version>5.1.8</version>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
