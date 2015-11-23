@@ -26,9 +26,17 @@ public abstract class BaseRestWebService {
 
     private static final Logger LOG = Logger.getLogger(BaseRestWebService.class.getName());
 
+    /**
+     * Handles an RestException returning an standard response.
+     *
+     * This allows returning response codes other than 200 OK easily from controller methods.
+     *
+     * @param ex the exception to be handled.
+     * @return The response to be shown containing the message and status error.
+     */
     @ExceptionHandler(RestException.class)
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
-    protected ResponseEntity<String> handleException(RestException ex) {
+    protected final ResponseEntity<String> handleException(RestException ex) {
         LOG.log(Level.FINEST, "RestException handled", ex);
         return new ResponseEntity<>(ex.getMessage(), ex.getStatus());
     }
@@ -39,7 +47,7 @@ public abstract class BaseRestWebService {
      *
      * @author lroman
      */
-    public class RestException extends RuntimeException {
+    public static class RestException extends RuntimeException {
 
         private final HttpStatus status;
 
@@ -58,25 +66,37 @@ public abstract class BaseRestWebService {
         /**
          * @return the status
          */
-        public HttpStatus getStatus() {
+        public final HttpStatus getStatus() {
             return status;
         }
 
     }
 
+    /**
+     * Handles MethodArgumentNotValidException so we return an encapsulated validation error object automatically instead just fail.
+     *
+     * @param ex the handled exception, containin automatic validation error results
+     * @return the encapsulated error object that
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ValidationErrorDTO processValidationError(MethodArgumentNotValidException ex) {
+    public final ValidationErrorDTO processValidationError(MethodArgumentNotValidException ex) {
         BindingResult result = ex.getBindingResult();
 
         return new ValidationErrorDTO(result.getFieldErrors());
     }
 
+    /**
+     * Handles CustomValidationException so we can manually trigger validation error responses.
+     *
+     * @param ex the custom validation exception containing manual validation errors
+     * @return the encapsulated error object
+     */
     @ExceptionHandler(CustomValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public ValidationErrorDTO processCustomValidationError(CustomValidationException ex) {
+    public final ValidationErrorDTO processCustomValidationError(CustomValidationException ex) {
         return ex.getErrors();
     }
 
