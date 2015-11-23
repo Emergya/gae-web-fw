@@ -6,6 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,24 +27,26 @@ public class GaeFrameworkUtilsWS extends BaseRestWebService {
      * Useful after schema changes.
      *
      *
-     * @param entityClassName
-     * @return
-     * @throws ClassNotFoundException
-     * @throws NoSuchMethodException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws IllegalArgumentException
-     * @throws InvocationTargetException
+     * @param entityClassName the full name of the entity class whose related index is to be updated.
+     * @return A map containing information about the updated index
+     * @throws ClassNotFoundException the provided class name doesn't exist in the classpath
+     * @throws NoSuchMethodException a valid default constructor for the entity's dao class doesn't exist
      */
     @RequestMapping("updateSearchIndex")
-    public Map<String, Object> updateSearchIndex(@RequestParam() String entityClassName)
-            throws ClassNotFoundException, NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public final Map<String, Object> updateSearchIndex(@RequestParam() String entityClassName)
+            throws ClassNotFoundException, NoSuchMethodException {
 
         Class<? extends BaseEntity> entityClass = (Class<? extends BaseEntity>) Class.forName(entityClassName);
         Class<? extends BaseDao> daoClass = BaseDao.getDaoForEntity(entityClass);
 
         int count = 0;
-        BaseDao<BaseEntity> dao = daoClass.getConstructor().newInstance();
+        BaseDao<BaseEntity> dao;
+        try {
+            dao = daoClass.getConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            Logger.getLogger(GaeFrameworkUtilsWS.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
         List<BaseEntity> list = dao.list();
         for (BaseEntity e : list) {
             dao.save(e); // This will recreate the index.

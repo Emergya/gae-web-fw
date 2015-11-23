@@ -10,8 +10,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -28,18 +26,23 @@ public abstract class BaseEntity implements Serializable {
     /**
      * @return the id
      */
-    public Long getId() {
+    public final Long getId() {
         return id;
     }
 
     /**
      * @param id the id to set
      */
-    public void setId(Long id) {
+    public final void setId(Long id) {
         this.id = id;
     }
 
-    public Document toDocument() {
+    /**
+     * Converts the entity's data to a SearchIndex documeent ready to be indexed.
+     *
+     * @return the Document instance.
+     */
+    public final Document toDocument() {
         Document.Builder documentBuilder
                 = Document.newBuilder().setId(getId().toString());
 
@@ -81,7 +84,7 @@ public abstract class BaseEntity implements Serializable {
         fieldBuilder.setName(fieldName);
 
         String resultType = resultClass.getSimpleName();
-        switch (resultType.toLowerCase()) {
+        switch (resultType.toLowerCase(Locale.UK)) {
             case "string":
                 fieldBuilder.setText((String) value).setLocale(Locale.UK);
                 break;

@@ -8,6 +8,13 @@
 
     <name>Spring MVC base fw for GAE webapps</name>
 
+
+    <parent>
+        <groupId>com.emergya</groupId>
+        <artifactId>java-common-checks</artifactId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
@@ -55,4 +62,15 @@
             <version>${jackson.version}</version>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>emergya-check-style</id>
+            <url>http://nexus.emergya.es/nexus/content/repositories/emergya-check-style</url>
+        </repository>
+        <repository>
+            <id>emergya-check-style-snapshots</id>
+            <url>http://nexus.emergya.es/nexus/content/repositories/emergya-check-style-snapshots</url>
+        </repository>
+    </repositories>
 </project>

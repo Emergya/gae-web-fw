@@ -1,15 +1,23 @@
 package com.emergya.spring.gae.web.dto;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.validation.FieldError;
 
-public final class ValidationErrorDTO {
+public final class ValidationErrorDTO implements Serializable {
+
+    private static final long serialVersionUID = 2324324324L;
 
     private final Map<String, List<String>> errors;
 
+    /**
+     * Constructor receiving errors for fields.
+     *
+     * @param fieldErrors the errors for fields
+     */
     public ValidationErrorDTO(List<FieldError> fieldErrors) {
         errors = new HashMap<>();
 
@@ -19,10 +27,19 @@ public final class ValidationErrorDTO {
 
     }
 
+    /**
+     * Default constructor.
+     */
     public ValidationErrorDTO() {
         errors = new HashMap();
     }
 
+    /**
+     * Allows adding an error for a field.
+     *
+     * @param field the field id
+     * @param message the message to be set
+     */
     public void addFieldError(String field, String message) {
 
         List<String> fieldErrors;
