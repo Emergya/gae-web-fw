@@ -18,8 +18,8 @@
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
-        <appengine.sdk.version>1.9.28</appengine.sdk.version>
-        <spring.version>4.2.2.RELEASE</spring.version>
+        <appengine.sdk.version>1.9.30</appengine.sdk.version>
+        <springmvc.version>4.2.4.RELEASE</springmvc.version>
         <jackson.version>2.6.3</jackson.version>
     </properties>
 
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
-            <version>${spring.version}</version>
+            <version>${springmvc.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>
