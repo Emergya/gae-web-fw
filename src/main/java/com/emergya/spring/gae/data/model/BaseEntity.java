@@ -133,6 +133,8 @@ public abstract class BaseEntity implements Serializable {
                 }
 
                 break;
+            case "geopt":
+                break;
             default:
                 throw new UnsupportedOperationException(String.format(
                         "Type %s is not supported for conversion to document field (%s).", resultType, fieldName));
