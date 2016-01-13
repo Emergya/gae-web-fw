@@ -8,7 +8,9 @@ import com.google.appengine.api.search.QueryOptions;
 import com.google.appengine.api.search.Results;
 import com.google.appengine.api.search.ScoredDocument;
 import com.google.appengine.api.search.SearchServiceFactory;
+import com.googlecode.objectify.ObjectifyService;
 import static com.googlecode.objectify.ObjectifyService.ofy;
+import com.googlecode.objectify.VoidWork;
 import com.googlecode.objectify.cmd.LoadType;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ public abstract class BaseDao<E extends BaseEntity> {
     public BaseDao() {
         entityClass = (Class<E>) ((ParameterizedType) getClass().getGenericSuperclass())
                 .getActualTypeArguments()[0];
+        ObjectifyService.factory().register(entityClass);
 
         IndexSpec indexSpec = IndexSpec.newBuilder().setName(entityClass.getSimpleName()).build();
         searchIndex = SearchServiceFactory.getSearchService().getIndex(indexSpec);
@@ -87,9 +90,21 @@ public abstract class BaseDao<E extends BaseEntity> {
         entity.setId(id);
 
         searchIndex.put(entity.toDocument());
-
         return id;
+    }
 
+    /**
+     * Saves a batch of entities.
+     *
+     * @param entities the entities to be saved. *
+     */
+    public final void batchSave(final List<E> entities) {
+        ofy().transact(new VoidWork() {
+            @Override
+            public void vrun() {
+                ofy().save().entities(entities);
+            }
+        });
     }
 
     /**
