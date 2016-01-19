@@ -1,6 +1,6 @@
 package com.emergya.spring.gae.web.ws;
 
-import com.emergya.spring.gae.data.dao.BaseDao;
+import com.emergya.spring.gae.data.dao.DatastoreBaseDao;
 import com.emergya.spring.gae.data.model.BaseEntity;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -37,10 +37,10 @@ public class GaeFrameworkUtilsWS extends BaseRestWebService {
             throws ClassNotFoundException, NoSuchMethodException {
 
         Class<? extends BaseEntity> entityClass = (Class<? extends BaseEntity>) Class.forName(entityClassName);
-        Class<? extends BaseDao> daoClass = BaseDao.getDaoForEntity(entityClass);
+        Class<? extends DatastoreBaseDao> daoClass = DatastoreBaseDao.getDaoForEntity(entityClass);
 
         int count = 0;
-        BaseDao<BaseEntity> dao;
+        DatastoreBaseDao<BaseEntity> dao;
         try {
             dao = daoClass.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
