@@ -94,6 +94,9 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
         entity.setId(id);
 
         searchIndex.put(entity.toDocument());
+
+        afterSave(entity);
+
         return id;
     }
 
@@ -198,6 +201,15 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      */
     public static Class<? extends DatastoreBaseDao> getDaoForEntity(Class<? extends BaseEntity> entityClass) {
         return DAOS_BY_ENTITY.get(entityClass);
+    }
+
+    /**
+     * Extension point to override to execute custom actions after the entity is saved with save().
+     *
+     * @param entity the saved entity.
+     */
+    protected void afterSave(E entity) {
+
     }
 
 }
