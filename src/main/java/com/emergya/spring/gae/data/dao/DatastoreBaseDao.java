@@ -1,6 +1,9 @@
 package com.emergya.spring.gae.data.dao;
 
 import com.emergya.spring.gae.data.model.BaseEntity;
+import com.google.appengine.api.search.Document;
+import com.google.appengine.api.search.GetRequest;
+import com.google.appengine.api.search.GetResponse;
 import com.google.appengine.api.search.Index;
 import com.google.appengine.api.search.IndexSpec;
 import com.google.appengine.api.search.Query;
@@ -220,7 +223,23 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
     public long reindex() {
         long count = 0;
 
-        searchIndex.deleteSchema();
+        GetRequest r = GetRequest.newBuilder().setReturningIdsOnly(true).build();
+
+        GetResponse<Document> toDelete;
+        while (true) {
+            toDelete = searchIndex.getRange(r);
+
+            if (toDelete.getResults().isEmpty()) {
+                break;
+            }
+
+            final List<String> ids = new ArrayList<>();
+            for (Document d : toDelete.getResults()) {
+                ids.add(d.getId());
+            }
+
+            searchIndex.delete(ids);
+        }
 
         List<E> list = this.list();
         for (E e : list) {
