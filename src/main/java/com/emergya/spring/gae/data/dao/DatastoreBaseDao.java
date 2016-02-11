@@ -212,4 +212,22 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
 
     }
 
+    /**
+     * Reindexes the Search index so its contents are on par with the DataStore.
+     *
+     * @return the number of entities reindexed
+     */
+    public long reindex() {
+        long count = 0;
+
+        searchIndex.deleteSchema();
+
+        List<E> list = this.list();
+        for (E e : list) {
+            searchIndex.put(e.toDocument());
+            count++;
+        }
+
+        return count;
+    }
 }

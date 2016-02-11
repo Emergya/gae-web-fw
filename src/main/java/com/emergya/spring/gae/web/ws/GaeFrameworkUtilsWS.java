@@ -4,7 +4,6 @@ import com.emergya.spring.gae.data.dao.DatastoreBaseDao;
 import com.emergya.spring.gae.data.model.BaseEntity;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +38,6 @@ public class GaeFrameworkUtilsWS extends BaseRestWebService {
         Class<? extends BaseEntity> entityClass = (Class<? extends BaseEntity>) Class.forName(entityClassName);
         Class<? extends DatastoreBaseDao> daoClass = DatastoreBaseDao.getDaoForEntity(entityClass);
 
-        int count = 0;
         DatastoreBaseDao<BaseEntity> dao;
         try {
             dao = daoClass.getConstructor().newInstance();
@@ -47,11 +45,8 @@ public class GaeFrameworkUtilsWS extends BaseRestWebService {
             Logger.getLogger(GaeFrameworkUtilsWS.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
         }
-        List<BaseEntity> list = dao.list();
-        for (BaseEntity e : list) {
-            dao.save(e); // This will recreate the index.
-            count++;
-        }
+
+        long count = dao.reindex();
 
         HashMap<String, Object> result = new HashMap<>();
 
