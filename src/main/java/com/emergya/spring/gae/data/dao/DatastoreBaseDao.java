@@ -171,6 +171,26 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
     }
 
     /**
+     * Searchs for entities given a AppEngine's query string and query options.
+     *
+     * @param queryString the query string to search for
+     * @param options the query options object see https://cloud.google.com/appengine/docs/java/search/options
+     * @return the search result.
+     */
+    public final Collection<E> search(String queryString, QueryOptions options) {
+        Query query = Query.newBuilder().setOptions(options).build(queryString);
+        Results<ScoredDocument> searchResults = searchIndex.search(query);
+
+        List<Long> ids = new ArrayList<>();
+        for (ScoredDocument result : searchResults) {
+            ids.add(Long.valueOf(result.getId()));
+        }
+
+        Map<Long, E> entities = getQuery().ids(ids);
+        return entities.values();
+    }
+
+    /**
      * Counts the total results available for a given query.
      *
      * @param queryString the query
