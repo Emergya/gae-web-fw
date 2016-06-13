@@ -11,6 +11,8 @@ import com.google.appengine.api.search.QueryOptions;
 import com.google.appengine.api.search.Results;
 import com.google.appengine.api.search.ScoredDocument;
 import com.google.appengine.api.search.SearchServiceFactory;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.googlecode.objectify.ObjectifyService;
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import com.googlecode.objectify.VoidWork;
@@ -21,18 +23,24 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.logging.Logger;
 
 /**
- * Base class implementing generic CRUD methods for instances of classes extending BaseEntity using Objectify and the search index.
+ * Base class implementing generic CRUD methods for instances of classes
+ * extending BaseEntity using Objectify and the search index.
  *
  * @author lroman
  * @param <E> The entity class
  */
 public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<E> {
 
+    private static final Logger LOG = Logger.getLogger(DatastoreBaseDao.class.getName());
+
     private static final Map<Class<? extends BaseEntity>, Class<? extends DatastoreBaseDao>> DAOS_BY_ENTITY = new HashMap<>();
     private static final int MAX_SEARCH_LIMIT = 1000;
     private static final int MAX_COUNT_LIMIT = 25000;
+    private static final int WAIT_MSECS = 1000;
 
     private final Class<E> entityClass;
     private final Index searchIndex;
@@ -58,9 +66,13 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      * @return the entity, or null if it doesn't exist.
      */
     @Override
-    public final E getById(long id) {
-
-        return getQuery().id(id).now();
+    public final E getById(final long id) {
+        return tryWithBackoff(new Callable<E>() {
+            @Override
+            public E call() throws Exception {
+                return getQuery().id(id).now();
+            }
+        });
     }
 
     /**
@@ -79,25 +91,39 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      * @param id the id of the entity to be deleted.
      */
     @Override
-    public final void delete(long id) {
-        ofy().delete().type(entityClass).id(id);
+    public final void delete(final long id) {
 
-        searchIndex.delete(id + "");
+        tryWithBackoff(new Callable<Boolean>() {
+            @Override
+            public Boolean call() {
+                ofy().delete().type(entityClass).id(id);
+                searchIndex.delete(id + "");
+                return true;
+            }
+        });
+
     }
 
     /**
      * Saves an entity (new or updated).
      *
-     * @param entity the entity to create (if doesn't have id) or update (if has id).
+     * @param entity the entity to create (if doesn't have id) or update (if has
+     * id).
      * @return the id of the saved entity
      */
     @Override
     public final Long save(final E entity) {
-        long id = ofy().save().entity(entity).now().getId();
+        long id = tryWithBackoff(new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+                long id = ofy().save().entity(entity).now().getId();
+
+                searchIndex.put(entity.toDocument());
+                return id;
+            }
+        });
+
         entity.setId(id);
-
-        searchIndex.put(entity.toDocument());
-
         afterSave(entity);
 
         return id;
@@ -116,6 +142,13 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
                 ofy().save().entities(entities);
             }
         });
+
+        searchIndex.putAsync(Lists.transform(entities, new Function<E, Document>() {
+            @Override
+            public Document apply(E f) {
+                return f.toDocument();
+            }
+        }));
     }
 
     /**
@@ -125,7 +158,12 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      */
     @Override
     public final List<E> list() {
-        return getQuery().list();
+        return tryWithBackoff(new Callable<List<E>>() {
+            @Override
+            public List<E> call() throws Exception {
+                return getQuery().list();
+            }
+        });
     }
 
     /**
@@ -174,7 +212,8 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      * Searchs for entities given a AppEngine's query string and query options.
      *
      * @param queryString the query string to search for
-     * @param options the query options object see https://cloud.google.com/appengine/docs/java/search/options
+     * @param options the query options object see
+     * https://cloud.google.com/appengine/docs/java/search/options
      * @return the search result.
      */
     public final Collection<E> search(String queryString, QueryOptions options) {
@@ -227,7 +266,8 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
     }
 
     /**
-     * Extension point to override to execute custom actions after the entity is saved with save().
+     * Extension point to override to execute custom actions after the entity is
+     * saved with save().
      *
      * @param entity the saved entity.
      */
@@ -268,5 +308,39 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
         }
 
         return count;
+    }
+
+    private <V> V tryWithBackoff(Callable<V> r) {
+        final int maxRetry = 3;
+        int attempts = 0;
+        int delay = 1;
+
+        V result;
+        while (true) {
+            try {
+                try {
+                    result = r.call();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            } catch (RuntimeException e) {
+                if (++attempts < maxRetry) {
+                    try {
+                        // retrying
+                        Thread.sleep(delay * WAIT_MSECS);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    delay *= 2; // easy exponential backoff
+                    LOG.info("Retrying operation in " + delay + ". Attempt " + attempts);
+                    continue;
+                } else {
+                    throw e; // otherwise throw
+                }
+            }
+            break;
+        }
+
+        return result;
     }
 }
