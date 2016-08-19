@@ -191,21 +191,27 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      */
     @Override
     public final Collection<E> search(String queryString, int offset, int limit) {
-        Query query = Query.newBuilder().setOptions(
+        final Query query = Query.newBuilder().setOptions(
                 QueryOptions.newBuilder()
                 .setLimit(limit)
                 .setOffset(offset)
                 .setFieldsToReturn("id"))
                 .build(queryString);
-        Results<ScoredDocument> searchResults = searchIndex.search(query);
 
-        List<Long> ids = new ArrayList<>();
-        for (ScoredDocument result : searchResults) {
-            ids.add(Long.valueOf(result.getId()));
-        }
+        return tryWithBackoff(new Callable<Collection<E>>() {
+            @Override
+            public Collection<E> call() throws Exception {
+                Results<ScoredDocument> searchResults = searchIndex.search(query);
 
-        Map<Long, E> entities = getQuery().ids(ids);
-        return entities.values();
+                List<Long> ids = new ArrayList<>();
+                for (ScoredDocument result : searchResults) {
+                    ids.add(Long.valueOf(result.getId()));
+                }
+
+                Map<Long, E> entities = getQuery().ids(ids);
+                return entities.values();
+            }
+        });
     }
 
     /**
@@ -217,16 +223,23 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      * @return the search result.
      */
     public final Collection<E> search(String queryString, QueryOptions options) {
-        Query query = Query.newBuilder().setOptions(options).build(queryString);
-        Results<ScoredDocument> searchResults = searchIndex.search(query);
+        final Query query = Query.newBuilder().setOptions(options).build(queryString);
 
-        List<Long> ids = new ArrayList<>();
-        for (ScoredDocument result : searchResults) {
-            ids.add(Long.valueOf(result.getId()));
-        }
+        return tryWithBackoff(new Callable<Collection<E>>() {
+            @Override
+            public Collection<E> call() throws Exception {
 
-        Map<Long, E> entities = getQuery().ids(ids);
-        return entities.values();
+                Results<ScoredDocument> searchResults = searchIndex.search(query);
+
+                List<Long> ids = new ArrayList<>();
+                for (ScoredDocument result : searchResults) {
+                    ids.add(Long.valueOf(result.getId()));
+                }
+
+                Map<Long, E> entities = getQuery().ids(ids);
+                return entities.values();
+            }
+        });
     }
 
     /**
@@ -236,14 +249,22 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
      * @return the total result count
      */
     @Override
+
     public final long count(String queryString) {
-        Query query = Query.newBuilder().setOptions(QueryOptions.newBuilder()
+        final Query query = Query.newBuilder().setOptions(QueryOptions.newBuilder()
                 .setLimit(1)
                 .setFieldsToReturn("id")
                 .setNumberFoundAccuracy(MAX_COUNT_LIMIT))
                 .build(queryString);
-        Results<ScoredDocument> searchResults = searchIndex.search(query);
-        return searchResults.getNumberFound();
+
+        return tryWithBackoff(new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+
+                Results<ScoredDocument> searchResults = searchIndex.search(query);
+                return searchResults.getNumberFound();
+            }
+        });
     }
 
     /**
