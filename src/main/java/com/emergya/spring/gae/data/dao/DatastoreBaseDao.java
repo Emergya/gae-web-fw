@@ -1,6 +1,7 @@
 package com.emergya.spring.gae.data.dao;
 
 import com.emergya.spring.gae.data.model.BaseEntity;
+import static com.emergya.spring.gae.utils.BackoffTryer.tryWithBackoff;
 import com.google.appengine.api.search.Document;
 import com.google.appengine.api.search.GetRequest;
 import com.google.appengine.api.search.GetResponse;
@@ -40,7 +41,6 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
     private static final Map<Class<? extends BaseEntity>, Class<? extends DatastoreBaseDao>> DAOS_BY_ENTITY = new HashMap<>();
     private static final int MAX_SEARCH_LIMIT = 1000;
     private static final int MAX_COUNT_LIMIT = 25000;
-    private static final int WAIT_MSECS = 1000;
 
     private final Class<E> entityClass;
     private final Index searchIndex;
@@ -331,37 +331,4 @@ public abstract class DatastoreBaseDao<E extends BaseEntity> implements BaseDao<
         return count;
     }
 
-    private <V> V tryWithBackoff(Callable<V> r) {
-        final int maxRetry = 3;
-        int attempts = 0;
-        int delay = 1;
-
-        V result;
-        while (true) {
-            try {
-                try {
-                    result = r.call();
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            } catch (RuntimeException e) {
-                if (++attempts < maxRetry) {
-                    try {
-                        // retrying
-                        Thread.sleep(delay * WAIT_MSECS);
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    delay *= 2; // easy exponential backoff
-                    LOG.info("Retrying operation in " + delay + ". Attempt " + attempts);
-                    continue;
-                } else {
-                    throw e; // otherwise throw
-                }
-            }
-            break;
-        }
-
-        return result;
-    }
 }
