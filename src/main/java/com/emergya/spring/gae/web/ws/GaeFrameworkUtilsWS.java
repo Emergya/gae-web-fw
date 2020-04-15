@@ -1,10 +1,9 @@
 package com.emergya.spring.gae.web.ws;
 
-import com.emergya.spring.gae.data.dao.BaseDao;
+import com.emergya.spring.gae.data.dao.DatastoreBaseDao;
 import com.emergya.spring.gae.data.model.BaseEntity;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,21 +36,17 @@ public class GaeFrameworkUtilsWS extends BaseRestWebService {
             throws ClassNotFoundException, NoSuchMethodException {
 
         Class<? extends BaseEntity> entityClass = (Class<? extends BaseEntity>) Class.forName(entityClassName);
-        Class<? extends BaseDao> daoClass = BaseDao.getDaoForEntity(entityClass);
+        Class<? extends DatastoreBaseDao> daoClass = DatastoreBaseDao.getDaoForEntity(entityClass);
 
-        int count = 0;
-        BaseDao<BaseEntity> dao;
+        DatastoreBaseDao<BaseEntity> dao;
         try {
             dao = daoClass.getConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             Logger.getLogger(GaeFrameworkUtilsWS.class.getName()).log(Level.SEVERE, null, ex);
             throw new RuntimeException(ex);
         }
-        List<BaseEntity> list = dao.list();
-        for (BaseEntity e : list) {
-            dao.save(e); // This will recreate the index.
-            count++;
-        }
+
+        long count = dao.reindex();
 
         HashMap<String, Object> result = new HashMap<>();
 

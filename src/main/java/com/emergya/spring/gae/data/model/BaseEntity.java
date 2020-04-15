@@ -38,7 +38,7 @@ public abstract class BaseEntity implements Serializable {
     }
 
     /**
-     * Converts the entity's data to a SearchIndex documeent ready to be indexed.
+     * Converts the entity's data to a SearchIndex document ready to be indexed.
      *
      * @return the Document instance.
      */
@@ -88,6 +88,9 @@ public abstract class BaseEntity implements Serializable {
             case "string":
                 fieldBuilder.setText((String) value).setLocale(Locale.UK);
                 break;
+            case "enum":
+                fieldBuilder.setAtom(((Enum) value).name());
+                break;
             case "long":
                 fieldBuilder.setAtom(((Long) value).toString());
                 break;
@@ -132,6 +135,8 @@ public abstract class BaseEntity implements Serializable {
                     fieldBuilder.setAtom(entity.getId().toString());
                 }
 
+                break;
+            case "geopt":
                 break;
             default:
                 throw new UnsupportedOperationException(String.format(
