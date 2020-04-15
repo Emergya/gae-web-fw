@@ -24,7 +24,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <appengine.sdk.version>1.9.30</appengine.sdk.version>
         <springmvc.version>4.3.1.RELEASE</springmvc.version>
-        <jackson.version>2.8.1</jackson.version>
+        <jackson.version>2.10.3</jackson.version>
     </properties>
 
     <dependencies>
